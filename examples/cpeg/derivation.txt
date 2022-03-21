@@ -1,0 +1,7 @@
+|- Prod : X_1 |_{X_1, X_2, X_3, X_4} E
+
+E = { X_1 = X_2
+    , X_2 = Prod[X_2, Empty, X_4] | X_3
+    , X_3 = Int[Empty]
+    , X_4 = Int[Empty]
+    }
