@@ -53,28 +53,34 @@ static PROD: Lazy<peggy::Expression<Core>> = Lazy::new(|| {
     )
 });
 
-// {[0123456789] #Int}
+// {[0123456789]+ #Int}
 static VAL: Lazy<peggy::Expression<Core>> = Lazy::new(|| {
     peggy::Expression::Capture(
-        Box::new(peggy::Expression::OrderedChoice(
-            Box::new(peggy::Expression::from_terminal(Letter::L0)),
-            Box::new(peggy::Expression::OrderedChoice(
-                Box::new(peggy::Expression::from_terminal(Letter::L1)),
+        Box::new(
+            peggy::Expression::OrderedChoice(
+                Box::new(peggy::Expression::from_terminal(Letter::L0)),
                 Box::new(peggy::Expression::OrderedChoice(
-                    Box::new(peggy::Expression::from_terminal(Letter::L2)),
+                    Box::new(peggy::Expression::from_terminal(Letter::L1)),
                     Box::new(peggy::Expression::OrderedChoice(
-                        Box::new(peggy::Expression::from_terminal(Letter::L3)),
+                        Box::new(peggy::Expression::from_terminal(Letter::L2)),
                         Box::new(peggy::Expression::OrderedChoice(
-                            Box::new(peggy::Expression::from_terminal(Letter::L4)),
+                            Box::new(peggy::Expression::from_terminal(Letter::L3)),
                             Box::new(peggy::Expression::OrderedChoice(
-                                Box::new(peggy::Expression::from_terminal(Letter::L5)),
+                                Box::new(peggy::Expression::from_terminal(Letter::L4)),
                                 Box::new(peggy::Expression::OrderedChoice(
-                                    Box::new(peggy::Expression::from_terminal(Letter::L6)),
+                                    Box::new(peggy::Expression::from_terminal(Letter::L5)),
                                     Box::new(peggy::Expression::OrderedChoice(
-                                        Box::new(peggy::Expression::from_terminal(Letter::L7)),
+                                        Box::new(peggy::Expression::from_terminal(Letter::L6)),
                                         Box::new(peggy::Expression::OrderedChoice(
-                                            Box::new(peggy::Expression::from_terminal(Letter::L8)),
-                                            Box::new(peggy::Expression::from_terminal(Letter::L9)),
+                                            Box::new(peggy::Expression::from_terminal(Letter::L7)),
+                                            Box::new(peggy::Expression::OrderedChoice(
+                                                Box::new(peggy::Expression::from_terminal(
+                                                    Letter::L8,
+                                                )),
+                                                Box::new(peggy::Expression::from_terminal(
+                                                    Letter::L9,
+                                                )),
+                                            )),
                                         )),
                                     )),
                                 )),
@@ -82,8 +88,9 @@ static VAL: Lazy<peggy::Expression<Core>> = Lazy::new(|| {
                         )),
                     )),
                 )),
-            )),
-        )),
+            )
+            .one_or_more(),
+        ),
         Label::Int,
     )
 });
@@ -110,15 +117,7 @@ impl Index<NonTerminal> for Grammar {
     }
 }
 
-impl peggy::Grammar<Core> for Grammar {
-    fn parse(
-        &self,
-        expr: &peggy::Expression<Core>,
-        input: &[Letter],
-    ) -> Result<peggy::Derivation, peggy::Error> {
-        todo!()
-    }
-}
+impl peggy::Grammar<Core> for Grammar {}
 
 fn main() -> Result<()> {
     use peggy::Grammar;
