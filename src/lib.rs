@@ -91,30 +91,37 @@ where
 }
 
 #[derive(Clone, Debug)]
-pub enum Tree<'a, T: CoreTypes> {
+pub enum Tree<T: CoreTypes> {
     Label(T::Label, Box<Self>),
     Concatenation(Box<Self>, Box<Self>),
-    String(&'a [T::Alphabet]),
+    // TODO: refactor to avoid redundant clones of parts of the input
+    String(Vec<T::Alphabet>),
 }
 
-impl<'a, T: CoreTypes> Tree<'a, T> {
+impl<T: CoreTypes> Tree<T> {
     fn canonicalize(&self) -> Self {
         match self {
             Tree::Label(l, v) => Tree::Label(l.clone(), Box::new(v.canonicalize())),
             Tree::Concatenation(v1, v2) => match (v1.deref(), v2.deref()) {
-                (l @ Tree::Label(_, _), Tree::String(_))
-                | (Tree::String(_), l @ Tree::Label(_, _)) => l.clone(),
-                // (Tree::Concatenation(_, _), Tree::Concatenation(_, _)) => todo!(),
-                // (Tree::Concatenation(_, _), Tree::String(_)) => todo!(),
-                // (Tree::String(_), Tree::Concatenation(_, _)) => todo!(),
+                (Tree::Label(l, v), Tree::String(_)) | (Tree::String(_), Tree::Label(l, v)) => {
+                    Tree::Label(l.to_owned(), Box::new(v.canonicalize()))
+                }
+                (v @ Tree::Concatenation(_, _), Tree::String(s2)) => match v.canonicalize() {
+                    Tree::String(s1) => Self::String([s1.to_owned(), s2.to_owned()].concat()),
+                    _v => todo!(),
+                },
+                (Tree::String(s1), v @ Tree::Concatenation(_, _)) => match v.canonicalize() {
+                    Tree::String(s2) => Self::String([s1.to_owned(), s2.to_owned()].concat()),
+                    _v => todo!(),
+                },
                 (Tree::String(s1), Tree::String(s2)) => {
-                    todo!("in practice `s1` and `s2` are guaranteed to be contiguous in memory, and with some careful design it would be possible to create a slice over both");
+                    Self::String([s1.to_owned(), s2.to_owned()].concat())
                 }
                 (v1, v2) => {
                     Tree::Concatenation(Box::new(v1.canonicalize()), Box::new(v2.canonicalize()))
                 }
             },
-            Tree::String(s) => Tree::String(s),
+            Tree::String(s) => Tree::String(s.to_owned()),
         }
     }
 }
@@ -141,7 +148,7 @@ pub enum RegularExpressionType<T: CoreTypes> {
     Var(TypeVar),
 }
 
-impl<'a, T: CoreTypes> From<Tree<'a, T>> for RegularExpressionType<T> {
+impl<T: CoreTypes> From<Tree<T>> for RegularExpressionType<T> {
     fn from(_: Tree<T>) -> Self {
         todo!()
     }
@@ -168,7 +175,7 @@ impl<T: CoreTypes> TypeMap<T> {
 
 // TODO: elaborate
 pub struct Derivation<'a, T: CoreTypes> {
-    tree: Tree<'a, T>,
+    tree: Tree<T>,
     unconsumed_input: &'a [T::Alphabet],
     ret: RegularExpressionType<T>,
     global_set: TypeMap<T>,
@@ -206,14 +213,14 @@ where
         &self,
         expr: &Expression<T>,
         input: &'a [T::Alphabet],
-    ) -> (Option<Tree<'a, T>>, &'a [T::Alphabet]) {
+    ) -> (Option<Tree<T>>, &'a [T::Alphabet]) {
         // See Fig 2 for `Tree` derivation (`v`): expression `e` parses an input
         //   `x` and transforms it to an output `o` with an unconsumed string
         //   `y`. (The output is an `Option` to account for potential failure.)
 
         match expr {
             // E-Empty
-            Expression::Empty => (Some(Tree::String(&[])), input),
+            Expression::Empty => (Some(Tree::String(vec![])), input),
             Expression::Terminal(x) => {
                 if input.is_empty() {
                     // TODO: Fig 2 doesn't have a rule for this case; verify this is correct
@@ -221,7 +228,7 @@ where
                 } else {
                     if *x == input[0] {
                         // E-Term1
-                        (Some(Tree::String(&input[0..1])), &input[1..])
+                        (Some(Tree::String((&input[0..1]).to_vec())), &input[1..])
                     } else {
                         // E-Term2
                         (None, &input[1..])
@@ -275,14 +282,14 @@ where
                         (Some(Tree::Concatenation(Box::new(v1), Box::new(v2))), y)
                     }
                     // E-Rep2
-                    (None, _) => (Some(Tree::String(&[])), input),
+                    (None, _) => (Some(Tree::String(vec![])), input),
                 }
             }
             Expression::Not(e) => match self.derive_tree(e, input) {
                 // E-Not1
                 (Some(_), _) => (None, input),
                 // E-Not2
-                (None, _) => (Some(Tree::String(&[])), input),
+                (None, _) => (Some(Tree::String(vec![])), input),
             },
             Expression::Capture(e, l) => {
                 let (v, y) = self.derive_tree(e, input);
