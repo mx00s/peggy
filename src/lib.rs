@@ -13,10 +13,10 @@ pub enum Error {}
 pub trait Alphabet: Clone + Debug + PartialEq + Eq {}
 
 // non_terminals must be unique
-pub trait NonTerminals: Clone + Debug {}
+pub trait NonTerminals: Clone + Debug + PartialEq + Eq {}
 
 // labels must be unique
-pub trait LabelSymbols: Clone + Debug {}
+pub trait LabelSymbols: Clone + Debug + PartialEq + Eq {}
 
 pub trait CoreTypes: Clone + Debug {
     type NonTerminal: NonTerminals;
@@ -126,19 +126,10 @@ impl<T: CoreTypes> Tree<T> {
     }
 }
 
-// impl<'a, T: CoreTypes> Tree<'a, T> {
-
-// }
-
-// TODO: implement special notion of `Tree` equality (or canonicalization)
-// described on page 4:
-//   - [ ] concatenated strings is equivalent to the string containing the first
-//     string then then second string.
-//   - [ ] any string concatenated with a labeled tree is equivalent to the
-//     labeled tree, both on the left and right sides.
-
+#[derive(Clone, Debug)]
 pub struct TypeVar(usize);
 
+#[derive(Clone, Debug)]
 pub enum RegularExpressionType<T: CoreTypes> {
     Empty,
     Concatenation(Box<Self>, Box<Self>),
@@ -154,6 +145,7 @@ impl<T: CoreTypes> From<Tree<T>> for RegularExpressionType<T> {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct TypeMap<T: CoreTypes>(HashMap<TypeVar, RegularExpressionType<T>>);
 
 impl<T: CoreTypes> TypeMap<T> {
@@ -166,7 +158,7 @@ impl<T: CoreTypes> TypeMap<T> {
         // `Expression` to a `RegularExpressionType` under a typing environment
         // (gamma) with a global set `E` and a set of used type variables.
 
-        todo!();
+        todo!("derive global set E and tree type from expression");
     }
 }
 
@@ -198,8 +190,12 @@ where
         }
         let tree = tree.unwrap().canonicalize();
         dbg!(&tree);
+        dbg!(&unconsumed_input);
 
         let (global_set, ret) = TypeMap::derive(expr)?;
+
+        dbg!(&global_set);
+        dbg!(&ret);
 
         Ok(Derivation {
             tree,
