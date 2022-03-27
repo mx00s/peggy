@@ -101,27 +101,27 @@ pub enum Tree<T: CoreTypes> {
 impl<T: CoreTypes> Tree<T> {
     fn canonicalize(&self) -> Self {
         match self {
-            Tree::Label(l, v) => Tree::Label(l.clone(), Box::new(v.canonicalize())),
-            Tree::Concatenation(v1, v2) => match (v1.deref(), v2.deref()) {
-                (Tree::Label(l, v), Tree::String(_)) | (Tree::String(_), Tree::Label(l, v)) => {
-                    Tree::Label(l.to_owned(), Box::new(v.canonicalize()))
+            Self::Label(l, v) => Self::Label(l.clone(), Box::new(v.canonicalize())),
+            Self::Concatenation(v1, v2) => match (v1.deref(), v2.deref()) {
+                (Self::Label(l, v), Self::String(_)) | (Self::String(_), Self::Label(l, v)) => {
+                    Self::Label(l.to_owned(), Box::new(v.canonicalize()))
                 }
-                (v @ Tree::Concatenation(_, _), Tree::String(s2)) => match v.canonicalize() {
-                    Tree::String(s1) => Self::String([s1.to_owned(), s2.to_owned()].concat()),
+                (v @ Self::Concatenation(_, _), Self::String(s2)) => match v.canonicalize() {
+                    Self::String(s1) => Self::String([s1.to_owned(), s2.to_owned()].concat()),
                     _v => todo!(),
                 },
-                (Tree::String(s1), v @ Tree::Concatenation(_, _)) => match v.canonicalize() {
-                    Tree::String(s2) => Self::String([s1.to_owned(), s2.to_owned()].concat()),
+                (Self::String(s1), v @ Self::Concatenation(_, _)) => match v.canonicalize() {
+                    Self::String(s2) => Self::String([s1.to_owned(), s2.to_owned()].concat()),
                     _v => todo!(),
                 },
-                (Tree::String(s1), Tree::String(s2)) => {
+                (Self::String(s1), Self::String(s2)) => {
                     Self::String([s1.to_owned(), s2.to_owned()].concat())
                 }
                 (v1, v2) => {
-                    Tree::Concatenation(Box::new(v1.canonicalize()), Box::new(v2.canonicalize()))
+                    Self::Concatenation(Box::new(v1.canonicalize()), Box::new(v2.canonicalize()))
                 }
             },
-            Tree::String(s) => Tree::String(s.to_owned()),
+            Self::String(s) => Self::String(s.to_owned()),
         }
     }
 }
