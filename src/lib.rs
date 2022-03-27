@@ -107,11 +107,11 @@ impl<T: CoreTypes> Tree<T> {
                     Self::Label(l.to_owned(), Box::new(v.canonicalize()))
                 }
                 (v @ Self::Concatenation(_, _), Self::String(s2)) => match v.canonicalize() {
-                    Self::String(s1) => Self::String([s1.to_owned(), s2.to_owned()].concat()),
+                    Self::String(s1) => Self::String([s1, s2.to_owned()].concat()),
                     _v => todo!(),
                 },
                 (Self::String(s1), v @ Self::Concatenation(_, _)) => match v.canonicalize() {
-                    Self::String(s2) => Self::String([s1.to_owned(), s2.to_owned()].concat()),
+                    Self::String(s2) => Self::String([s1.to_owned(), s2].concat()),
                     _v => todo!(),
                 },
                 (Self::String(s1), Self::String(s2)) => {
@@ -221,14 +221,12 @@ where
                 if input.is_empty() {
                     // TODO: Fig 2 doesn't have a rule for this case; verify this is correct
                     (None, input)
+                } else if *x == input[0] {
+                    // E-Term1
+                    (Some(Tree::String((&input[0..1]).to_vec())), &input[1..])
                 } else {
-                    if *x == input[0] {
-                        // E-Term1
-                        (Some(Tree::String((&input[0..1]).to_vec())), &input[1..])
-                    } else {
-                        // E-Term2
-                        (None, &input[1..])
-                    }
+                    // E-Term2
+                    (None, &input[1..])
                 }
             }
             // E-Nt
@@ -313,7 +311,7 @@ where
                                 Tree::Label(
                                     l.clone(),
                                     Box::new(Tree::Concatenation(
-                                        Box::new(v1.clone()),
+                                        Box::new(v1),
                                         Box::new(v2.clone()),
                                     )),
                                 ),
